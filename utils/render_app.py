@@ -1,5 +1,5 @@
 import numpy as np
-from render import vis_of_vertices, render_texture
+from utils.render import vis_of_vertices, render_texture
 from scipy import ndimage
 
 def get_visibility(vertices, triangles, h, w):
@@ -32,8 +32,9 @@ def get_uv_mask(vertices_vis, triangles, uv_coords, h, w, resolution):
 
     return np.squeeze(uv_mask)
 
-def get_depth_image(vertices, triangles, h, w):
+def get_depth_image(vertices, triangles, h, w, isShow = False):
     z = vertices[:, 2:]
-    z = z/max(z)
+    if isShow:
+        z = z/max(z)
     depth_image = render_texture(vertices.T, z.T, triangles.T, h, w, 1)
     return np.squeeze(depth_image)

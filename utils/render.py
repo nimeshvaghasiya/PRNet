@@ -82,11 +82,11 @@ def get_point_weight(point, tri_points):
     return w0, w1, w2
 
 
-def render_texture(vertices, texture, triangles, h, w, c = 3):
+def render_texture(vertices, colors, triangles, h, w, c = 3):
     ''' render mesh by z buffer
     Args:
         vertices: 3 x nver
-        texture: 3 x nver
+        colors: 3 x nver
         triangles: 3 x ntri
         h: height
         w: width    
@@ -97,7 +97,7 @@ def render_texture(vertices, texture, triangles, h, w, c = 3):
     depth_buffer = np.zeros([h, w]) - 999999.
     # triangle depth: approximate the depth to the average value of z in each vertex(v0, v1, v2), since the vertices are closed to each other
     tri_depth = (vertices[2, triangles[0,:]] + vertices[2,triangles[1,:]] + vertices[2, triangles[2,:]])/3. 
-    tri_tex = (texture[:, triangles[0,:]] + texture[:,triangles[1,:]] + texture[:, triangles[2,:]])/3.
+    tri_tex = (colors[:, triangles[0,:]] + colors[:,triangles[1,:]] + colors[:, triangles[2,:]])/3.
 
     for i in range(triangles.shape[1]):
         tri = triangles[:, i] # 3 vertex indices
@@ -340,54 +340,3 @@ def vis_of_vertices(vertices, triangles, h, w, depth_buffer = None):
             depth_tmp[py, px] = vertex[2]
 
     return vertices_vis
-
-# TODO: To be modified
-def triangle_buffer(vertices, triangles, h, w):
-    '''
-    Args:
-        vertices: 3 x nver
-        triangles: 3 x ntri
-        h: height  # [h, w, _] = image.shape
-        w: width
-    Returns:
-        depth_buffer: height x width
-        triangle_buffer: height x width
-    ToDo:
-        whether to add x, y by 0.5? the center of the pixel?
-        m3. like somewhere is wrong
-    # Each triangle has 3 vertices & Each vertex has 3 coordinates x, y, z.
-    # Here, the bigger the z, the fronter the point.
-    '''
-    depth_buffer = np.zeros([h, w]) + 999999. #+ np.min(vertices[2,:]) - 999999. # set the initial z to the farest position
-    triangle_buffer = np.zeros_like(depth_buffer, dtype = np.int32) - 1 # if -1, the pixel has no triangle correspondance
-
-    ## calculate the depth(z) of each triangle
-    #-m1. z = the center of shpere(through 3 vertices)
-    #center3d = (vertices[:, triangles[0,:]] + vertices[:,triangles[1,:]] + vertices[:, triangles[2,:]])/3.
-    #tri_depth = np.sum(center3d**2, axis = 0)
-    #-m2. z = the center of z(v0, v1, v2)
-    tri_depth = (vertices[2, triangles[0,:]] + vertices[2,triangles[1,:]] + vertices[2, triangles[2,:]])/3.
-    
-    for i in range(int(triangles.shape[1])):
-        tri = triangles[:, i] # 3 vertex indices
-
-        # the inner bounding box
-        umin = max(int(np.ceil(np.min(vertices[0,tri]))), 0)
-        umax = min(int(np.floor(np.max(vertices[0,tri]))), w-1)
-
-        vmin = max(int(np.ceil(np.min(vertices[1,tri]))), 0)
-        vmax = min(int(np.floor(np.max(vertices[1,tri]))), h-1)
-
-        if umax<umin or vmax<vmin:
-            continue
-
-        for u in range(umin, umax+1):
-            for v in range(vmin, vmax+1):
-                #-m3. calculate the accurate depth(z) of each pixel by barycentric weights
-                #w0, w1, w2 = weightsOfpoint([u,v], vertices[:2, tri])
-                #tri_depth = w0*vertices[2,tri[0]] + w1*vertices[2,tri[1]] + w2*vertices[2,tri[2]]
-                if tri_depth[i] > depth_buffer[v, u]: # and is_pointIntri([u,v], vertices[:2, tri]): 
-                    depth_buffer[v, u] = tri_depth[i]
-                    triangle_buffer[v, u] = i
-
-    return depth_buffer , triangle_buffer
